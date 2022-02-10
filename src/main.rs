@@ -5,7 +5,7 @@ mod args;
 use std::io::{self, Read, Write};
 
 use anyhow::Context;
-use args::{Args, Command};
+use args::{Args, Format};
 use clap::StructOpt;
 
 fn main() -> anyhow::Result<()> {
@@ -18,21 +18,25 @@ fn main() -> anyhow::Result<()> {
         .read_to_end(&mut input)
         .context("Failed to read input")?;
 
-    input
-        .drain_filter(|c| c.is_ascii_whitespace())
-        .for_each(|_| ());
+    if !args.from.allows_whitespace() {
+        input
+            .drain_filter(|c| c.is_ascii_whitespace())
+            .for_each(|_| ());
+    }
 
-    let decoded = match args.command {
-        Command::Base64ToHex => base64::decode(input).context("Failed to decode base64")?,
-        Command::HexToBase64 => hex::decode(input).context("Failed to decode hex")?,
+    let decoded = match args.from {
+        Format::Base64 => base64::decode(input).context("Failed to decode base64")?,
+        Format::Hex => hex::decode(input).context("Failed to decode hex")?,
+        Format::Bin => input,
     };
 
-    let encoded = match args.command {
-        Command::Base64ToHex => hex::encode(decoded),
-        Command::HexToBase64 => base64::encode(decoded),
+    let encoded = match args.to {
+        Format::Base64 => base64::encode(decoded).into_bytes(),
+        Format::Hex => hex::encode(decoded).into_bytes(),
+        Format::Bin => decoded,
     };
 
-    io::stdout().lock().write_all(encoded.as_bytes())?;
+    io::stdout().lock().write_all(&encoded)?;
 
     Ok(())
 }

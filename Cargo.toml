@@ -1,5 +1,5 @@
 [package]
-name = "base64-hex"
+name = "recode"
 version = "0.1.0"
 edition = "2021"
 
