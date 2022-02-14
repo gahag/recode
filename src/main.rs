@@ -5,8 +5,9 @@ mod args;
 use std::io::{self, Read, Write};
 
 use anyhow::Context;
-use args::{Args, Format};
+use args::{Args, InputFormat, OutputFormat};
 use clap::StructOpt;
+use pem::Pem;
 
 fn main() -> anyhow::Result<()> {
     let args = Args::try_parse()?;
@@ -18,22 +19,26 @@ fn main() -> anyhow::Result<()> {
         .read_to_end(&mut input)
         .context("Failed to read input")?;
 
-    if !args.from.allows_whitespace() {
-        input
-            .drain_filter(|c| c.is_ascii_whitespace())
-            .for_each(|_| ());
+    if !args.from.whitespace_is_data() {
+        input.drain_filter(|c| c.is_ascii_whitespace());
     }
 
     let decoded = match args.from {
-        Format::Base64 => base64::decode(input).context("Failed to decode base64")?,
-        Format::Hex => hex::decode(input).context("Failed to decode hex")?,
-        Format::Bin => input,
+        InputFormat::Pem => pem::parse(input).context("Failed to decode PEM")?.contents,
+        InputFormat::Base64 => base64::decode(input).context("Failed to decode base64")?,
+        InputFormat::Hex => hex::decode(input).context("Failed to decode hex")?,
+        InputFormat::Bin => input,
     };
 
     let encoded = match args.to {
-        Format::Base64 => base64::encode(decoded).into_bytes(),
-        Format::Hex => hex::encode(decoded).into_bytes(),
-        Format::Bin => decoded,
+        OutputFormat::Base64 => base64::encode(decoded).into_bytes(),
+        OutputFormat::Hex => hex::encode(decoded).into_bytes(),
+        OutputFormat::Bin => decoded,
+        OutputFormat::Pem(pem) => pem::encode(&Pem {
+            tag: pem.tag().into(),
+            contents: decoded,
+        })
+        .into_bytes(),
     };
 
     io::stdout().lock().write_all(&encoded)?;
