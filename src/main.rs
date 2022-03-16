@@ -34,10 +34,13 @@ fn main() -> anyhow::Result<()> {
         OutputFormat::Base64 => base64::encode(decoded).into_bytes(),
         OutputFormat::Hex => hex::encode(decoded).into_bytes(),
         OutputFormat::Bin => decoded,
-        OutputFormat::Pem(pem) => pem::encode(&Pem {
-            tag: pem.tag().into(),
-            contents: decoded,
-        })
+        OutputFormat::Pem(pem) => pem::encode_config(
+            &Pem {
+                tag: pem.tag().into(),
+                contents: decoded,
+            },
+            pem::EncodeConfig { line_ending: pem::LineEnding::LF }
+        )
         .into_bytes(),
     };
 
