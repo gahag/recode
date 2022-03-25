@@ -7,6 +7,7 @@ use std::{
 #[derive(Debug, Copy, Clone)]
 pub enum InputFormat {
     Base64,
+    Base64UrlSafe,
     Hex,
     Bin,
     Pem,
@@ -16,7 +17,7 @@ impl InputFormat {
     /// Whether whitespaces are data.
     pub fn whitespace_is_data(&self) -> bool {
         match self {
-            Self::Base64 | Self::Hex => false,
+            Self::Base64 | Self::Base64UrlSafe | Self::Hex => false,
             Self::Bin | Self::Pem => true,
         }
     }
@@ -28,6 +29,7 @@ impl FromStr for InputFormat {
     fn from_str(input: &str) -> Result<Self, Self::Err> {
         match input {
             cmd if cmd.eq_ignore_ascii_case("hex") => Ok(Self::Hex),
+            cmd if cmd.eq_ignore_ascii_case("base64-urlsafe") => Ok(Self::Base64UrlSafe),
             cmd if cmd.eq_ignore_ascii_case("base64") => Ok(Self::Base64),
             cmd if cmd.eq_ignore_ascii_case("bin") => Ok(Self::Bin),
             cmd if cmd.eq_ignore_ascii_case("pem") => Ok(Self::Pem),
@@ -40,6 +42,7 @@ impl FromStr for InputFormat {
 #[derive(Debug, Copy, Clone)]
 pub enum OutputFormat {
     Base64,
+    Base64UrlSafe,
     Hex,
     Bin,
     Pem(Pem),
@@ -75,6 +78,7 @@ impl FromStr for OutputFormat {
         match input {
             cmd if cmd.eq_ignore_ascii_case("hex") => Ok(Self::Hex),
             cmd if cmd.eq_ignore_ascii_case("base64") => Ok(Self::Base64),
+            cmd if cmd.eq_ignore_ascii_case("base64-urlsafe") => Ok(Self::Base64UrlSafe),
             cmd if cmd.eq_ignore_ascii_case("bin") => Ok(Self::Bin),
             cmd if cmd.eq_ignore_ascii_case("crt") => Ok(Self::Pem(Pem::Crt)),
             cmd if cmd.eq_ignore_ascii_case("csr") => Ok(Self::Pem(Pem::Csr)),

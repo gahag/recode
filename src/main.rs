@@ -26,12 +26,18 @@ fn main() -> anyhow::Result<()> {
     let decoded = match args.from {
         InputFormat::Pem => pem::parse(input).context("Failed to decode PEM")?.contents,
         InputFormat::Base64 => base64::decode(input).context("Failed to decode base64")?,
+        InputFormat::Base64UrlSafe => {
+            base64::decode_config(input, base64::URL_SAFE).context("Failed to decode base64")?
+        }
         InputFormat::Hex => hex::decode(input).context("Failed to decode hex")?,
         InputFormat::Bin => input,
     };
 
     let encoded = match args.to {
         OutputFormat::Base64 => base64::encode(decoded).into_bytes(),
+        OutputFormat::Base64UrlSafe => {
+            base64::encode_config(decoded, base64::URL_SAFE).into_bytes()
+        }
         OutputFormat::Hex => hex::encode(decoded).into_bytes(),
         OutputFormat::Bin => decoded,
         OutputFormat::Pem(pem) => pem::encode_config(
@@ -39,7 +45,9 @@ fn main() -> anyhow::Result<()> {
                 tag: pem.tag().into(),
                 contents: decoded,
             },
-            pem::EncodeConfig { line_ending: pem::LineEnding::LF }
+            pem::EncodeConfig {
+                line_ending: pem::LineEnding::LF,
+            },
         )
         .into_bytes(),
     };
