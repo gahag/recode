@@ -9,16 +9,17 @@ pub enum InputFormat {
     Base64,
     Base64UrlSafe,
     Hex,
+    Dec,
     Bin,
     Pem,
 }
 
 impl InputFormat {
-    /// Whether whitespaces are data.
-    pub fn whitespace_is_data(&self) -> bool {
+    /// Whether whitespaces may change the payload content.
+    pub fn whitespace_is_relevant(&self) -> bool {
         match self {
             Self::Base64 | Self::Base64UrlSafe | Self::Hex => false,
-            Self::Bin | Self::Pem => true,
+            Self::Dec | Self::Bin | Self::Pem => true,
         }
     }
 }
@@ -28,6 +29,7 @@ impl FromStr for InputFormat {
 
     fn from_str(input: &str) -> Result<Self, Self::Err> {
         match input {
+            cmd if cmd.eq_ignore_ascii_case("dec") => Ok(Self::Dec),
             cmd if cmd.eq_ignore_ascii_case("hex") => Ok(Self::Hex),
             cmd if cmd.eq_ignore_ascii_case("base64-urlsafe") => Ok(Self::Base64UrlSafe),
             cmd if cmd.eq_ignore_ascii_case("base64") => Ok(Self::Base64),
