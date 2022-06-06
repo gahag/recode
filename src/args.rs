@@ -107,10 +107,10 @@ impl std::error::Error for ParseFormatError {}
 #[derive(Debug, Clone, clap::Parser)]
 #[clap(version, author, about)]
 pub struct Args {
-    /// Input type: pem, base64, hex or bin.
+    /// Input type: dec, hex, base64-urlsafe, base64, bin, pem.
     #[clap(short, long)]
     pub from: InputFormat,
-    /// Output type: crt, csr, key, ekey, pub, base64, hex or bin.
+    /// Output type: crt, csr, key, ekey, pub, base64, base64-urlsafe, hex or bin.
     #[clap(short, long)]
     pub to: OutputFormat,
 }
