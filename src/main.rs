@@ -1,5 +1,3 @@
-#![feature(drain_filter)]
-
 mod args;
 
 use std::io::{self, Read, Write};
@@ -20,13 +18,15 @@ fn main() -> anyhow::Result<()> {
         .context("Failed to read input")?;
 
     if !args.from.whitespace_is_relevant() {
-        input.drain_filter(|c| c.is_ascii_whitespace());
+        input.retain(|c| !c.is_ascii_whitespace());
     }
 
     let decoded = match args.from {
         InputFormat::Pem => pem::parse(input).context("Failed to decode PEM")?.contents,
-        InputFormat::Base64 => base64::decode(input).context("Failed to decode base64")?,
-        InputFormat::Base64UrlSafe => {
+        InputFormat::Base64 { url_safe: false } => {
+            base64::decode(input).context("Failed to decode base64")?
+        }
+        InputFormat::Base64 { url_safe: true } => {
             base64::decode_config(input, base64::URL_SAFE).context("Failed to decode base64")?
         }
         InputFormat::Dec => {
@@ -39,7 +39,10 @@ fn main() -> anyhow::Result<()> {
                     None => break,
                 };
 
-                let end = input.iter().position(|c| !c.is_ascii_digit()).unwrap_or(input.len());
+                let end = input
+                    .iter()
+                    .position(|c| !c.is_ascii_digit())
+                    .unwrap_or(input.len());
 
                 let number = std::str::from_utf8(&input[..end])?.parse()?;
                 data.push(number);
@@ -54,9 +57,9 @@ fn main() -> anyhow::Result<()> {
     };
 
     let encoded = match args.to {
-        OutputFormat::Base64 => base64::encode(decoded).into_bytes(),
-        OutputFormat::Base64UrlSafe => {
-            base64::encode_config(decoded, base64::URL_SAFE).into_bytes()
+        OutputFormat::Base64 { url_safe: false } => base64::encode(decoded).into_bytes(),
+        OutputFormat::Base64 { url_safe: true } => {
+            base64::encode_config(decoded, base64::URL_SAFE_NO_PAD).into_bytes()
         }
         OutputFormat::Hex => hex::encode(decoded).into_bytes(),
         OutputFormat::Bin => decoded,
